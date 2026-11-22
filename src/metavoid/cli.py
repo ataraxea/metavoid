@@ -25,6 +25,20 @@ def inspect(file: Path):
     typer.echo(f"Path: {info['path']}")
     typer.echo(f"Format: {info['format']}")
 
+    metadata = info["metadata"]
+
+    if metadata:
+        typer.echo("\nEXIF metadata:")
+
+        for key, value in metadata.items():
+            typer.echo(f"  {key}: {value}")
+
+    elif info["format"] == "JPEG":
+        typer.echo("\nNo top-level EXIF metadata found.")
+    else:
+        typer.echo("\nMetadata inspection is not supported for this format yet.")
+
+
 
 @app.command()
 def clean(file: Path):
