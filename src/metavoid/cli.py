@@ -16,13 +16,14 @@ def inspect(file: Path):
     """Inspect metadata in a file."""
     try:
         info = get_file_info(file)
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(code=1)
 
     typer.echo(f"File: {info['name']}")
     typer.echo(f"Size: {info['size']} bytes")
     typer.echo(f"Path: {info['path']}")
+    typer.echo(f"Format: {info['format']}")
 
 
 @app.command()
