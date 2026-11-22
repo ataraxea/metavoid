@@ -2,6 +2,8 @@ from pathlib import Path
 
 import typer
 
+from metavoid.core import get_file_info
+
 app = typer.Typer(
     name="metavoid",
     help="Inspect and remove metadata from files.",
@@ -9,26 +11,21 @@ app = typer.Typer(
 )
 
 
-
 @app.command()
 def inspect(file: Path):
     """Inspect metadata in a file."""
-
-    if not file.exists():
-        typer.echo(f"Error: File '{file}' does not exist.")
+    try:
+        info = get_file_info(file)
+    except ValueError as error:
+        typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(code=1)
 
-    if not file.is_file():
-        typer.echo(f"Error: '{file}' is not a regular file.")
-        raise typer.Exit(code=1)
-
-    typer.echo(f"File: {file.name}")
-    typer.echo(f"Size: {file.stat().st_size} bytes")
-    typer.echo(f"Path: {file.resolve()}")
-
+    typer.echo(f"File: {info['name']}")
+    typer.echo(f"Size: {info['size']} bytes")
+    typer.echo(f"Path: {info['path']}")
 
 
 @app.command()
 def clean(file: Path):
     """Remove metadata from a file."""
-    typer.echo(f"Cleaning: {file}")
+    typer.echo("Metadata cleaning is not implemented yet.")
