@@ -2,6 +2,7 @@ from pathlib import Path
 
 from metavoid.detector import detect_format
 from metavoid.handlers.jpeg import read_exif
+from metavoid.handlers.jpeg import clean_jpeg
 
 
 def get_file_info(file: Path) -> dict:
@@ -24,3 +25,18 @@ def get_file_info(file: Path) -> dict:
         "format": file_format,
         "metadata": metadata,
     }
+
+def clean_file(file: Path) -> Path:
+    """Clean metadata from a supported file."""
+
+    if not file.is_file():
+        raise ValueError(f"Not a valid file: {file}")
+
+    file_format = detect_format(file)
+
+    if file_format == "JPEG":
+        return clean_jpeg(file)
+
+    raise ValueError(
+        f"Cleaning is not supported for {file_format}"
+    )

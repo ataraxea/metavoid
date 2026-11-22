@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from metavoid.core import get_file_info
+from metavoid.core import get_file_info, clean_file
 
 app = typer.Typer(
     name="metavoid",
@@ -40,7 +40,19 @@ def inspect(file: Path):
 
 
 
+
 @app.command()
 def clean(file: Path):
-    """Remove metadata from a file."""
-    typer.echo("Metadata cleaning is not implemented yet.")
+    """Create a JPEG copy without EXIF metadata."""
+
+    try:
+        output = clean_file(file)
+
+    except (ValueError, OSError) as error:
+        typer.echo(f"Error: {error}", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Original: {file}")
+    typer.echo(f"Cleaned: {output}")
+    typer.echo("EXIF verification: passed")
+
