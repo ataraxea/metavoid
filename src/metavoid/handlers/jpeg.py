@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import os
+import tempfile
+
 from PIL import Image, ExifTags
 from PIL import ImageOps
 
@@ -35,24 +38,37 @@ def read_exif(file: Path) -> dict[str, str]:
 
 
 
+
 def clean_jpeg(file: Path) -> Path:
-    """Create a JPEG copy without EXIF metadata."""
+    """Create and verify a JPEG copy without EXIF."""
 
     output = file.with_name(
         f"{file.stem}_clean{file.suffix}"
     )
 
-    with Image.open(file) as image:
-        if image.format != "JPEG":
-            raise ValueError("Expected a JPEG image")
+    if output.exists():
+        raise FileExistsError(
+            f"Output already exists: {output}"
+        )
 
-        cleaned = ImageOps.exif_transpose(image)
+    temporary_path = None
 
-        created = False
+    try:
+        with Image.open(file) as image:
+            if image.format != "JPEG":
+                raise ValueError("Expected a JPEG image")
 
-        try:
-            with output.open("xb") as stream:
-                created = True
+            cleaned = ImageOps.exif_transpose(image)
+
+            fd, name = tempfile.mkstemp(
+                prefix=".metavoid-",
+                suffix=".tmp",
+                dir=file.parent,
+            )
+
+            temporary_path = Path(name)
+
+            with os.fdopen(fd, "wb") as stream:
                 cleaned.save(
                     stream,
                     format="JPEG",
@@ -60,17 +76,24 @@ def clean_jpeg(file: Path) -> Path:
                     exif=b"",
                 )
 
-            with Image.open(output) as result:
-                result.load()
+                stream.flush()
+                os.fsync(stream.fileno())
 
-                if result.getexif():
-                    raise ValueError(
-                        "EXIF verification failed"
-                    )
+        with Image.open(temporary_path) as result:
+            result.load()
 
-        except Exception:
-            if created:
-                output.unlink(missing_ok=True)
-            raise
+            if result.format != "JPEG":
+                raise ValueError("Invalid output format")
 
-    return output
+            if result.getexif():
+                raise ValueError(
+                    "EXIF verification failed"
+                )
+
+        os.link(temporary_path, output)
+
+        return output
+
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
