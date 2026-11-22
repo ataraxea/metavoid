@@ -3,7 +3,7 @@ from pathlib import Path
 from metavoid.detector import detect_format
 from metavoid.handlers.jpeg import read_exif
 from metavoid.handlers.jpeg import clean_jpeg
-
+from metavoid.handlers.jpeg_lossless import clean_jpeg_lossless
 
 def get_file_info(file: Path) -> dict:
     """Get file information and supported metadata."""
@@ -26,7 +26,11 @@ def get_file_info(file: Path) -> dict:
         "metadata": metadata,
     }
 
-def clean_file(file: Path) -> Path:
+
+def clean_file(
+    file: Path,
+    lossless: bool = False,
+) -> Path:
     """Clean metadata from a supported file."""
 
     if not file.is_file():
@@ -35,6 +39,9 @@ def clean_file(file: Path) -> Path:
     file_format = detect_format(file)
 
     if file_format == "JPEG":
+        if lossless:
+            return clean_jpeg_lossless(file)
+
         return clean_jpeg(file)
 
     raise ValueError(

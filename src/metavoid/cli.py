@@ -41,12 +41,20 @@ def inspect(file: Path):
 
 
 
+
 @app.command()
-def clean(file: Path):
-    """Create a JPEG copy without EXIF metadata."""
+def clean(
+    file: Path,
+    lossless: bool = typer.Option(
+        False,
+        "--lossless",
+        help="Remove JPEG EXIF without recompression.",
+    ),
+):
+    """Create a cleaned copy of a supported file."""
 
     try:
-        output = clean_file(file)
+        output = clean_file(file, lossless=lossless)
 
     except (ValueError, OSError) as error:
         typer.echo(f"Error: {error}", err=True)
@@ -54,5 +62,5 @@ def clean(file: Path):
 
     typer.echo(f"Original: {file}")
     typer.echo(f"Cleaned: {output}")
+    typer.echo(f"Mode: {'lossless' if lossless else 'standard'}")
     typer.echo("EXIF verification: passed")
-

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 
@@ -34,6 +33,7 @@ def inspect_jpeg_segments(file: Path) -> list[dict]:
         if marker == 0xD9:
             raise ValueError("JPEG ended before SOS")
 
+        # Standalone markers have no length field.
         if marker == 0x01 or 0xD0 <= marker <= 0xD7:
             continue
 
@@ -56,9 +56,12 @@ def inspect_jpeg_segments(file: Path) -> list[dict]:
             else f"FF{marker:02X}"
         )
 
+        position += length
+
         segments.append({
             "marker": name,
             "offset": start,
+            "end": position,
             "length": length,
             "exif": (
                 marker == 0xE1
@@ -66,9 +69,31 @@ def inspect_jpeg_segments(file: Path) -> list[dict]:
             ),
         })
 
-        position += length
-
         if marker == 0xDA:
             return segments
 
     raise ValueError("Missing JPEG SOS marker")
+
+
+def strip_exif_bytes(file: Path) -> bytes:
+    """Remove EXIF APP1 segments without recompression."""
+
+    data = file.read_bytes()
+    segments = inspect_jpeg_segments(file)
+
+    result = bytearray()
+    cursor = 0
+
+    for segment in segments:
+        if not segment["exif"]:
+            continue
+
+        start = segment["offset"]
+        end = segment["end"]
+
+        result.extend(data[cursor:start])
+        cursor = end
+
+    result.extend(data[cursor:])
+
+    return bytes(result)
