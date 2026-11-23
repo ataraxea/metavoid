@@ -72,6 +72,7 @@ def inspect(
             status = "Yes" if kind in detected else "No"
             typer.echo(f"  {kind}: {status}")
 
+
 @app.command()
 def clean(
     file: Path,
@@ -80,17 +81,37 @@ def clean(
         "--lossless",
         help="Remove JPEG EXIF without recompression.",
     ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Save the cleaned file to this path.",
+    ),
+    in_place: bool = typer.Option(
+        False,
+        "--in-place",
+        help="Replace the original file after cleaning.",
+    ),
 ):
-    """Create a cleaned copy of a supported file."""
+    """Clean JPEG metadata."""
 
     try:
-        output = clean_file(file, lossless=lossless)
+        result = clean_file(
+            file,
+            lossless=lossless,
+            output=output,
+            in_place=in_place,
+        )
 
     except (ValueError, OSError) as error:
         typer.echo(f"Error: {error}", err=True)
         raise typer.Exit(code=1)
 
     typer.echo(f"Original: {file}")
-    typer.echo(f"Cleaned: {output}")
+    typer.echo(f"Cleaned: {result}")
     typer.echo(f"Mode: {'lossless' if lossless else 'standard'}")
-    typer.echo("EXIF verification: passed")
+
+    if in_place:
+        typer.echo("Original file replaced.")
+    else:
+        typer.echo("Original file preserved.")
