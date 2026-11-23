@@ -2,6 +2,8 @@ from pathlib import Path
 
 import typer
 
+from importlib.metadata import version as package_version
+
 from metavoid.handlers.jpeg_metadata import get_jpeg_segment_report
 
 from metavoid.core import get_file_info, clean_file
@@ -11,6 +13,29 @@ app = typer.Typer(
     help="Inspect and remove metadata from files.",
     no_args_is_help=True,
 )
+
+
+def version_callback(value: bool):
+    """Display the installed Metavoid version."""
+
+    if value:
+        typer.echo(f"Metavoid {package_version('metavoid')}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the installed version.",
+    ),
+):
+    """Metavoid command-line interface."""
+    pass
+
 
 @app.command()
 def inspect(
